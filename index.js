@@ -1,15 +1,15 @@
 var bitcoinjs = require('bitcoinjs-lib')
 var BigNumber = require('bignumber.js')
 var _ = require('lodash')
-var encodeAssetId = require('cc-assetid-encoder')
-var cc = require('cc-transaction')
+var encodeAssetId = require('digiasset-assetid-encoder')
+var cc = require('digiasset-transaction')
 var findBestMatchByNeededAssets = require('./modules/findBestMatchByNeededAssets')
 var Buffer = require('safe-buffer').Buffer
-var debug = require('debug')('cc-transaction-builder')
-var errors = require('cc-errors')
+var debug = require('debug')('digiasset-transaction-builder')
+var errors = require('digiasset-errors')
 var bufferReverse = require('buffer-reverse')
 
-var CC_TX_VERSION = 0x02
+var CC_TX_VERSION = 0x01
 
 var ColoredCoinsBuilder = function (properties) {
   properties = properties || {}
@@ -192,7 +192,7 @@ ColoredCoinsBuilder.prototype._encodeAssetId = function (reissueable, txid, nvou
 ColoredCoinsBuilder.prototype._encodeColorScheme = function (args) {
   var self = this
   var addMultisig = false
-  var encoder = cc.newTransaction(0x4343, CC_TX_VERSION)
+  var encoder = cc.newTransaction(0x4441, CC_TX_VERSION)
   var reedemScripts = []
   var coloredOutputIndexes = []
   var txb = args.txb
@@ -533,7 +533,7 @@ ColoredCoinsBuilder.prototype._addInputsForSendTransaction = function (txb, args
     }
   }
   debug('reached encoder')
-  var encoder = cc.newTransaction(0x4343, CC_TX_VERSION)
+  var encoder = cc.newTransaction(0x4441, CC_TX_VERSION)
   if (!self._tryAddingInputsForFee(txb, args.utxos, totalInputs, args, satoshiCost)) {
     throw new errors.NotEnoughFundsError({
       type: 'issuance',
