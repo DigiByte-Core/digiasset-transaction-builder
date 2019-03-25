@@ -2,16 +2,16 @@ var bitcoinjs = require('bitcoinjs-lib')
 var BigNumber = require('bignumber.js')
 var _ = require('lodash')
 var encodeAssetId = require('digiasset-assetid-encoder')
-var cc = require('digiasset-transaction')
+var da = require('digiasset-transaction')
 var findBestMatchByNeededAssets = require('./modules/findBestMatchByNeededAssets')
 var Buffer = require('safe-buffer').Buffer
 var debug = require('debug')('digiasset-transaction-builder')
 var errors = require('digiasset-errors')
 var bufferReverse = require('buffer-reverse')
 
-var CC_TX_VERSION = 0x01
+var DA_TX_VERSION = 0x01
 
-var ColoredCoinsBuilder = function (properties) {
+var DigiAssetBuilder = function (properties) {
   properties = properties || {}
 
   if (typeof properties.network !== 'undefined' && properties.network !== 'testnet' && properties.network !== 'mainnet') {
@@ -29,7 +29,7 @@ var ColoredCoinsBuilder = function (properties) {
   this.writemultisig = properties.writemultisig || true
 }
 
-ColoredCoinsBuilder.prototype.buildIssueTransaction = function (args) {
+DigiAssetBuilder.prototype.buildIssueTransaction = function (args) {
   var self = this
   if (!args.utxos) {
     throw new Error('Must have "utxos"')
@@ -53,17 +53,17 @@ ColoredCoinsBuilder.prototype.buildIssueTransaction = function (args) {
 
   var txb = new bitcoinjs.TransactionBuilder(self.network === 'testnet' ? bitcoinjs.networks.testnet : bitcoinjs.networks.bitcoin)
   // find inputs to cover the issuance
-  var ccArgs = self._addInputsForIssueTransaction(txb, args)
-  if (!ccArgs.success) {
+  var daArgs = self._addInputsForIssueTransaction(txb, args)
+  if (!daArgs.success) {
     throw new errors.NotEnoughFundsError({ type: 'issue' })
   }
-  _.assign(ccArgs, args)
-  var res = self._encodeColorScheme(ccArgs)
-  res.assetId = ccArgs.assetId
+  _.assign(daArgs, args)
+  var res = self._encodeColorScheme(daArgs)
+  res.assetId = daArgs.assetId
   return res
 }
 
-ColoredCoinsBuilder.prototype._addInputsForIssueTransaction = function (txb, args) {
+DigiAssetBuilder.prototype._addInputsForIssueTransaction = function (txb, args) {
   var self = this
   var utxos = args.utxos
   var assetId = ''
@@ -136,7 +136,7 @@ ColoredCoinsBuilder.prototype._addInputsForIssueTransaction = function (txb, arg
   return {success: true, txb: txb, change: change, assetId: assetId, totalInputs: { amount: current }}
 }
 
-ColoredCoinsBuilder.prototype._getIssuanceCost = function (args) {
+DigiAssetBuilder.prototype._getIssuanceCost = function (args) {
   var self = this
   var fee = args.fee || self.defaultFee
   var totalCost = fee
@@ -159,9 +159,9 @@ ColoredCoinsBuilder.prototype._getIssuanceCost = function (args) {
   return totalCost
 }
 
-ColoredCoinsBuilder.prototype._encodeAssetId = function (reissueable, txid, nvout, hex, divisibility, aggregationPolicy) {
+DigiAssetBuilder.prototype._encodeAssetId = function (reissueable, txid, nvout, hex, divisibility, aggregationPolicy) {
   var opts = {
-    ccdata: [{
+    dadata: [{
       type: 'issuance',
       lockStatus: !reissueable,
       divisibility: divisibility,
@@ -189,10 +189,10 @@ ColoredCoinsBuilder.prototype._encodeAssetId = function (reissueable, txid, nvou
   return assetId
 }
 
-ColoredCoinsBuilder.prototype._encodeColorScheme = function (args) {
+DigiAssetBuilder.prototype._encodeColorScheme = function (args) {
   var self = this
   var addMultisig = false
-  var encoder = cc.newTransaction(0x4441, CC_TX_VERSION)
+  var encoder = da.newTransaction(0x4441, DA_TX_VERSION)
   var reedemScripts = []
   var coloredOutputIndexes = []
   var txb = args.txb
@@ -234,7 +234,7 @@ ColoredCoinsBuilder.prototype._encodeColorScheme = function (args) {
   }
 
   if (coloredAmount < 0) {
-    throw new errors.CCTransactionConstructionError({ explanation: 'transferring more than issued' })
+    throw new errors.DATransactionConstructionError({ explanation: 'transferring more than issued' })
   }
 
   // add OP_RETURN
@@ -310,7 +310,7 @@ ColoredCoinsBuilder.prototype._encodeColorScheme = function (args) {
   return { txHex: txb.tx.toHex(), multisigOutputs: reedemScripts, coloredOutputIndexes: _.uniq(coloredOutputIndexes) }
 }
 
-ColoredCoinsBuilder.prototype._generateMultisigAddress = function (pubKeys, m) {
+DigiAssetBuilder.prototype._generateMultisigAddress = function (pubKeys, m) {
   var self = this
   var ecpubkeys = []
   pubKeys.forEach(function (key) {
@@ -323,7 +323,7 @@ ColoredCoinsBuilder.prototype._generateMultisigAddress = function (pubKeys, m) {
   return { address: sendto, reedemScript: script.toHex() }
 }
 
-ColoredCoinsBuilder.prototype._addHashesOutput = function (tx, address, sha2, sha1) {
+DigiAssetBuilder.prototype._addHashesOutput = function (tx, address, sha2, sha1) {
   var self = this
   var chunks = []
   chunks.push(bitcoinjs.opcodes.OP_1)
@@ -346,7 +346,7 @@ ColoredCoinsBuilder.prototype._addHashesOutput = function (tx, address, sha2, sh
   tx.outs.unshift({ script: script, value: self._getNoneMinDustByScript(script) })
 }
 
-ColoredCoinsBuilder.prototype._getNoneMinDustByScript = function (script) {
+DigiAssetBuilder.prototype._getNoneMinDustByScript = function (script) {
   var self = this
   // add 9 to aacount for bitcoind SER_DISK serilaztion before the multiplication
   return (((self.defaultFeePerKb * (script.length + 148 + 9)) / 1000) * 3)
@@ -359,7 +359,7 @@ function isInputInTx (tx, txid, index) {
   })
 }
 
-ColoredCoinsBuilder.prototype._insertSatoshiToTransaction = function (utxos, txb, missing, inputsValue, metadata) {
+DigiAssetBuilder.prototype._insertSatoshiToTransaction = function (utxos, txb, missing, inputsValue, metadata) {
   debug('missing: ' + missing)
   var paymentDone = false
   var missingbn = new BigNumber(missing)
@@ -407,7 +407,7 @@ ColoredCoinsBuilder.prototype._insertSatoshiToTransaction = function (utxos, txb
   return hasEnoughEquity
 }
 
-ColoredCoinsBuilder.prototype._tryAddingInputsForFee = function (txb, utxos, totalInputs, metadata, satoshiCost) {
+DigiAssetBuilder.prototype._tryAddingInputsForFee = function (txb, utxos, totalInputs, metadata, satoshiCost) {
   var self = this
   debug('tryAddingInputsForFee: current transaction value: ' + totalInputs.amount + ' projected cost: ' + satoshiCost)
   if (satoshiCost > totalInputs.amount) {
@@ -419,7 +419,7 @@ ColoredCoinsBuilder.prototype._tryAddingInputsForFee = function (txb, utxos, tot
   return true
 }
 
-ColoredCoinsBuilder.prototype.buildSendTransaction = function (args) {
+DigiAssetBuilder.prototype.buildSendTransaction = function (args) {
   var self = this
   if (!args.utxos) {
     throw new Error('Must have "utxos"')
@@ -440,7 +440,7 @@ ColoredCoinsBuilder.prototype.buildSendTransaction = function (args) {
   return self._addInputsForSendTransaction(txb, args)
 }
 
-ColoredCoinsBuilder.prototype._computeCost = function (withfee, args) {
+DigiAssetBuilder.prototype._computeCost = function (withfee, args) {
   var self = this
   var fee = withfee ? (args.fee || args.minfee) : 0
 
@@ -457,7 +457,7 @@ ColoredCoinsBuilder.prototype._computeCost = function (withfee, args) {
   return fee
 }
 
-ColoredCoinsBuilder.prototype._getInputAmountNeededForTx = function (tx, fee) {
+DigiAssetBuilder.prototype._getInputAmountNeededForTx = function (tx, fee) {
   var self = this
   var total = fee
   tx.outs.forEach(function (output) {
@@ -466,13 +466,13 @@ ColoredCoinsBuilder.prototype._getInputAmountNeededForTx = function (tx, fee) {
   return total
 }
 
-ColoredCoinsBuilder.prototype._getChangeAmount = function (tx, fee, totalInputValue) {
+DigiAssetBuilder.prototype._getChangeAmount = function (tx, fee, totalInputValue) {
   var allOutputValues = _.sumBy(tx.outs, function (output) { return output.value })
   debug('getChangeAmount: all inputs: ' + totalInputValue.amount + ' all outputs: ' + allOutputValues)
   return (totalInputValue.amount - (allOutputValues + fee))
 }
 
-ColoredCoinsBuilder.prototype._addInputsForSendTransaction = function (txb, args) {
+DigiAssetBuilder.prototype._addInputsForSendTransaction = function (txb, args) {
   var self = this
   var satoshiCost = self._computeCost(true, args)
   var totalInputs = { amount: 0 }
@@ -533,7 +533,7 @@ ColoredCoinsBuilder.prototype._addInputsForSendTransaction = function (txb, args
     }
   }
   debug('reached encoder')
-  var encoder = cc.newTransaction(0x4441, CC_TX_VERSION)
+  var encoder = da.newTransaction(0x4441, DA_TX_VERSION)
   if (!self._tryAddingInputsForFee(txb, args.utxos, totalInputs, args, satoshiCost)) {
     throw new errors.NotEnoughFundsError({
       type: 'issuance',
@@ -611,7 +611,7 @@ ColoredCoinsBuilder.prototype._addInputsForSendTransaction = function (txb, args
     } else if (buffer.leftover.length === 2) {
       self._addHashesOutput(txb.tx, args.pubKeyReturnMultisigDust, buffer.leftover[1], buffer.leftover[0])
     } else {
-      throw new errors.CCTransactionConstructionError()
+      throw new errors.DATransactionConstructionError()
     }
   }
 
@@ -663,7 +663,7 @@ ColoredCoinsBuilder.prototype._addInputsForSendTransaction = function (txb, args
   return { txHex: txb.tx.toHex(), metadataSha1: args.torrentHash, multisigOutputs: reedemScripts, coloredOutputIndexes: _.uniqBy(coloredOutputIndexes) }
 }
 
-ColoredCoinsBuilder.prototype.buildBurnTransaction = function (args) {
+DigiAssetBuilder.prototype.buildBurnTransaction = function (args) {
   var self = this
   args = args || {}
   var to = args.transfer || []
@@ -675,4 +675,4 @@ ColoredCoinsBuilder.prototype.buildBurnTransaction = function (args) {
   return self.buildSendTransaction(args)
 }
 
-module.exports = ColoredCoinsBuilder
+module.exports = DigiAssetBuilder

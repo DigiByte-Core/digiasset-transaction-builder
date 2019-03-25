@@ -1,12 +1,12 @@
 /* eslint-env mocha */
-var ColoredCoinsBuilder = require('..')
-var ccb = new ColoredCoinsBuilder({network: 'testnet'})
+var DigiAssetBuilder = require('..')
+var dab = new DigiAssetBuilder({network: 'testnet'})
 var assert = require('assert')
 var clone = require('clone')
 var bitcoinjs = require('bitcoinjs-lib')
 var Transaction = bitcoinjs.Transaction
 var script = bitcoinjs.script
-var CC = require('cc-transaction')
+var DA = require('digiasset-transaction')
 var _ = require('lodash')
 
 var issueArgs = {
@@ -29,7 +29,7 @@ describe('builder.buildIssueTransaction(args)', function () {
     var args = clone(issueArgs)
     delete args.utxos
     assert.throws(function () {
-      ccb.buildIssueTransaction(args)
+      dab.buildIssueTransaction(args)
     }, /Must have "utxos"/)
     done()
   })
@@ -38,7 +38,7 @@ describe('builder.buildIssueTransaction(args)', function () {
     var args = clone(issueArgs)
     delete args.fee
     assert.throws(function () {
-      ccb.buildIssueTransaction(args)
+      dab.buildIssueTransaction(args)
     }, /Must have "fee"/)
     done()
   })
@@ -47,7 +47,7 @@ describe('builder.buildIssueTransaction(args)', function () {
     var args = clone(issueArgs)
     delete args.issueAddress
     assert.throws(function () {
-      ccb.buildIssueTransaction(args)
+      dab.buildIssueTransaction(args)
     }, /Must have "issueAddress"/)
     done()
   })
@@ -56,13 +56,13 @@ describe('builder.buildIssueTransaction(args)', function () {
     var args = clone(issueArgs)
     delete args.amount
     assert.throws(function () {
-      ccb.buildIssueTransaction(args)
+      dab.buildIssueTransaction(args)
     }, /Must have "amount"/)
     done()
   })
 
   it('returns valid response with default values', function (done) {
-    var result = ccb.buildIssueTransaction(issueArgs)
+    var result = dab.buildIssueTransaction(issueArgs)
     assert(result.txHex)
     var tx = Transaction.fromHex(result.txHex)
     assert.equal(tx.ins.length, 1)
@@ -73,20 +73,20 @@ describe('builder.buildIssueTransaction(args)', function () {
     var sumValueOutputs = _.sumBy(tx.outs, function (output) { return output.value })
     assert.equal(sumValueInputs - sumValueOutputs, issueArgs.fee)
     var opReturnScriptBuffer = script.decompile(tx.outs[0].script)[1]
-    var ccTransaction = CC.fromHex(opReturnScriptBuffer)
-    assert.equal(ccTransaction.type, 'issuance')
-    assert.equal(ccTransaction.amount, issueArgs.amount)
+    var daTransaction = DA.fromHex(opReturnScriptBuffer)
+    assert.equal(daTransaction.type, 'issuance')
+    assert.equal(daTransaction.amount, issueArgs.amount)
     // default values
-    assert.equal(ccTransaction.lockStatus, true)
-    assert.equal(ccTransaction.divisibility, 0)
-    assert.equal(ccTransaction.aggregationPolicy, 'aggregatable')
+    assert.equal(daTransaction.lockStatus, true)
+    assert.equal(daTransaction.divisibility, 0)
+    assert.equal(daTransaction.aggregationPolicy, 'aggregatable')
     done()
   })
 
   it('flags.injectPreviousOutput === true: return previous output hex in inputs', function (done) {
     var args = clone(issueArgs)
     args.flags = {injectPreviousOutput: true}
-    var result = ccb.buildIssueTransaction(args)
+    var result = dab.buildIssueTransaction(args)
     assert(result.txHex)
     var tx = Transaction.fromHex(result.txHex)
     assert.equal(tx.ins.length, 1)
@@ -97,7 +97,7 @@ describe('builder.buildIssueTransaction(args)', function () {
   it('should split change', function (done) {
     var args = clone(issueArgs)
     args.financeChangeAddress = false
-    var result = ccb.buildIssueTransaction(args)
+    var result = dab.buildIssueTransaction(args)
     assert(result.txHex)
     var tx = Transaction.fromHex(result.txHex)
     assert.equal(tx.ins.length, 1)
@@ -110,12 +110,12 @@ describe('builder.buildIssueTransaction(args)', function () {
     var args = clone(issueArgs)
     args.sha2 = '59040d5c3bc91b5e28e014541363c0f64d9a2429541fe6cf1c568c63c85fbb20'
     args.torrentHash = '02fcc3d843eaba4d278ed107c0c2b56a146f66b8'
-    var result = ccb.buildIssueTransaction(args)
+    var result = dab.buildIssueTransaction(args)
     var tx = Transaction.fromHex(result.txHex)
     var opReturnScriptBuffer = script.decompile(tx.outs[0].script)[1]
-    var ccTransaction = CC.fromHex(opReturnScriptBuffer)
-    assert.equal(ccTransaction.sha2.toString('hex'), args.sha2)
-    assert.equal(ccTransaction.torrentHash.toString('hex'), args.torrentHash)
+    var daTransaction = DA.fromHex(opReturnScriptBuffer)
+    assert.equal(daTransaction.sha2.toString('hex'), args.sha2)
+    assert.equal(daTransaction.torrentHash.toString('hex'), args.torrentHash)
     done()
   })
 
@@ -123,12 +123,12 @@ describe('builder.buildIssueTransaction(args)', function () {
     var args = clone(issueArgs)
     args.sha2 = '59040d5c3bc91b5e28e014541363c0f64d9a2429541fe6cf1c568c63c85fbb20'
     args.torrentHash = '02fcc3d843eaba4d278ed107c0c2b56a146f66b8'
-    var result = ccb.buildIssueTransaction(args)
+    var result = dab.buildIssueTransaction(args)
     var tx = Transaction.fromHex(result.txHex)
     var opReturnScriptBuffer = script.decompile(tx.outs[0].script)[1]
-    var ccTransaction = CC.fromHex(opReturnScriptBuffer)
-    assert.equal(ccTransaction.sha2.toString('hex'), args.sha2)
-    assert.equal(ccTransaction.torrentHash.toString('hex'), args.torrentHash)
+    var daTransaction = DA.fromHex(opReturnScriptBuffer)
+    assert.equal(daTransaction.sha2.toString('hex'), args.sha2)
+    assert.equal(daTransaction.torrentHash.toString('hex'), args.torrentHash)
     done()
   })
 })
@@ -170,7 +170,7 @@ describe('builder.buildSendTransaction(args)', function () {
     var args = clone(sendArgs)
     delete args.utxos
     assert.throws(function () {
-      ccb.buildSendTransaction(args)
+      dab.buildSendTransaction(args)
     }, /Must have "utxos"/)
     done()
   })
@@ -179,7 +179,7 @@ describe('builder.buildSendTransaction(args)', function () {
     var args = clone(sendArgs)
     delete args.to
     assert.throws(function () {
-      ccb.buildSendTransaction(args)
+      dab.buildSendTransaction(args)
     }, /Must have "to"/)
     done()
   })
@@ -188,13 +188,13 @@ describe('builder.buildSendTransaction(args)', function () {
     var args = clone(sendArgs)
     delete args.fee
     assert.throws(function () {
-      ccb.buildSendTransaction(args)
+      dab.buildSendTransaction(args)
     }, /Must have "fee"/)
     done()
   })
 
   it('returns valid response with default values', function (done) {
-    var result = ccb.buildSendTransaction(sendArgs)
+    var result = dab.buildSendTransaction(sendArgs)
     assert(result.txHex)
     var tx = Transaction.fromHex(result.txHex)
     assert.equal(tx.ins.length, 1)
@@ -204,13 +204,13 @@ describe('builder.buildSendTransaction(args)', function () {
     var sumValueOutputs = _.sumBy(tx.outs, function (output) { return output.value })
     assert.equal(sumValueInputs - sumValueOutputs, sendArgs.fee)
     var opReturnScriptBuffer = script.decompile(tx.outs[1].script)[1]
-    var ccTransaction = CC.fromHex(opReturnScriptBuffer)
-    assert.equal(ccTransaction.type, 'transfer')
-    assert.equal(ccTransaction.payments[0].range, false)
-    assert.equal(ccTransaction.payments[0].output, 0)
-    assert.equal(ccTransaction.payments[0].input, 0)
-    assert.equal(ccTransaction.payments[0].percent, false)
-    assert.equal(ccTransaction.payments[0].amount, sendArgs.to[0].amount)
+    var daTransaction = DA.fromHex(opReturnScriptBuffer)
+    assert.equal(daTransaction.type, 'transfer')
+    assert.equal(daTransaction.payments[0].range, false)
+    assert.equal(daTransaction.payments[0].output, 0)
+    assert.equal(daTransaction.payments[0].input, 0)
+    assert.equal(daTransaction.payments[0].percent, false)
+    assert.equal(daTransaction.payments[0].amount, sendArgs.to[0].amount)
     done()
   })
 
@@ -258,13 +258,13 @@ describe('builder.buildSendTransaction(args)', function () {
     }
     args.sha2 = '59040d5c3bc91b5e28e014541363c0f64d9a2429541fe6cf1c568c63c85fbb20'
     args.torrentHash = '02fcc3d843eaba4d278ed107c0c2b56a146f66b8'
-    var result = ccb.buildSendTransaction(args)
+    var result = dab.buildSendTransaction(args)
     assert(result.txHex)
     var tx = Transaction.fromHex(result.txHex)
     var opReturnScriptBuffer = script.decompile(tx.outs[tx.outs.length - 3].script)[1]
-    var ccTransaction = CC.fromHex(opReturnScriptBuffer)
-    assert.equal(ccTransaction.multiSig[0].hashType, 'sha2')
-    assert.equal(ccTransaction.multiSig[1].hashType, 'torrentHash')
+    var daTransaction = DA.fromHex(opReturnScriptBuffer)
+    assert.equal(daTransaction.multiSig[0].hashType, 'sha2')
+    assert.equal(daTransaction.multiSig[1].hashType, 'torrentHash')
     done()
   })
 
@@ -272,19 +272,19 @@ describe('builder.buildSendTransaction(args)', function () {
     var args = clone(sendArgs)
     args.sha2 = '59040d5c3bc91b5e28e014541363c0f64d9a2429541fe6cf1c568c63c85fbb20'
     args.torrentHash = '02fcc3d843eaba4d278ed107c0c2b56a146f66b8'
-    var result = ccb.buildSendTransaction(args)
+    var result = dab.buildSendTransaction(args)
     var tx = Transaction.fromHex(result.txHex)
     var opReturnScriptBuffer = script.decompile(tx.outs[1].script)[1]
-    var ccTransaction = CC.fromHex(opReturnScriptBuffer)
-    assert.equal(ccTransaction.sha2.toString('hex'), args.sha2)
-    assert.equal(ccTransaction.torrentHash.toString('hex'), args.torrentHash)
+    var daTransaction = DA.fromHex(opReturnScriptBuffer)
+    assert.equal(daTransaction.sha2.toString('hex'), args.sha2)
+    assert.equal(daTransaction.torrentHash.toString('hex'), args.torrentHash)
     done()
   })
 
   it('flags.injectPreviousOutput === true: return previous output hex in inputs', function (done) {
     var args = clone(sendArgs)
     args.flags = {injectPreviousOutput: true}
-    var result = ccb.buildSendTransaction(args)
+    var result = dab.buildSendTransaction(args)
     assert(result.txHex)
     var tx = Transaction.fromHex(result.txHex)
     assert.equal(tx.ins.length, 1)
@@ -295,7 +295,7 @@ describe('builder.buildSendTransaction(args)', function () {
   it('should not split change', function (done) {
     var args = clone(sendArgs)
     args.financeChangeAddress = false
-    var result = ccb.buildSendTransaction(args)
+    var result = dab.buildSendTransaction(args)
     assert(result.txHex)
     var tx = Transaction.fromHex(result.txHex)
     assert.equal(tx.ins.length, 1)
@@ -339,7 +339,7 @@ var burnArgs = {
 
 describe('builder.buildBurnTransaction(args)', function () {
   it('returns valid response with default values', function (done) {
-    var result = ccb.buildBurnTransaction(burnArgs)
+    var result = dab.buildBurnTransaction(burnArgs)
     assert(result.txHex)
     var tx = Transaction.fromHex(result.txHex)
     assert.equal(tx.ins.length, 1)
@@ -349,11 +349,11 @@ describe('builder.buildBurnTransaction(args)', function () {
     var sumValueOutputs = _.sumBy(tx.outs, function (output) { return output.value })
     assert.equal(sumValueInputs - sumValueOutputs, burnArgs.fee)
     var opReturnScriptBuffer = script.decompile(tx.outs[0].script)[1]
-    var ccTransaction = CC.fromHex(opReturnScriptBuffer)
-    assert.equal(ccTransaction.type, 'burn')
-    assert.equal(ccTransaction.payments[0].burn, true)
-    assert.equal(ccTransaction.payments[0].input, 0)
-    assert.equal(ccTransaction.payments[0].amount, burnArgs.burn[0].amount)
+    var daTransaction = DA.fromHex(opReturnScriptBuffer)
+    assert.equal(daTransaction.type, 'burn')
+    assert.equal(daTransaction.payments[0].burn, true)
+    assert.equal(daTransaction.payments[0].input, 0)
+    assert.equal(daTransaction.payments[0].amount, burnArgs.burn[0].amount)
     done()
   })
 })

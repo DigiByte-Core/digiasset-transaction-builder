@@ -1,9 +1,9 @@
-# cc-transaction-builder
+# digiasset-transaction-builder
 [![Build Status][travis-image]][travis-url] [![NPM version][npm-image]][npm-url] [![Slack Channel][slack-image]][slack-url]
 
 [![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
 
-ColoredCoins Transaction Builder.<br>
+DigiAsset Transaction Builder.<br>
 This module is a high-level abstraction for building transactions for issuing and transferring digital assets using the ColoredCoins protocol.
 
 ## Note
@@ -18,9 +18,9 @@ npm install cc-transaction-builder
 ## Usage
 
 ```js
-var ColoredCoinsBuilder = require('cc-transaction-builder')
-var ccb = new ColoredCoinsBuilder()
-var result = ccb.buildsIssueTransaction({
+var DigiAssetBuilder = require('digiasset-transaction-builder')
+var dab = new DigiAssetBuilder()
+var result = dab.buildsIssueTransaction({
   utxos: [{
     txid: 'b757c9f200c8ccd937ad493b2d499364640c0e2bfc62f99ef9aec635b7ff3474',
     index: 1,
@@ -49,9 +49,9 @@ will print:
 
 ## API
 
-### `builder = ColoredCoinsBuilder([properties])`
+### `builder = DigiAssetBuilder([properties])`
 
-Create a new `ColoredCoinsBuilder` instance.
+Create a new `DigiAssetBuilder` instance.
 
 If `properties` is specified, then the default properties will be overridden.
 
