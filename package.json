@@ -12,7 +12,7 @@
     "bignumber.js": "^4.0.0",
     "bitcoinjs-lib": "git://github.com/DigiByte-Core/bitcoinjs-lib.git#2d5fb18fbb4e785bee6cef1b28906987ea5cb505",
     "buffer-reverse": "^1.0.1",
-    "digiasset-assetid-encoder": "^0.7.0",
+    "digiasset-assetid-encoder": "^0.7.1",
     "digiasset-errors": "^0.1.0",
     "digiasset-transaction": "^1.3.0",
     "debug": "^2.6.4",
