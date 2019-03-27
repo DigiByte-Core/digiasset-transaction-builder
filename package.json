@@ -1,6 +1,6 @@
 {
   "name": "digiasset-transaction-builder",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "High-level abstraction for building DigiAsset transactions",
   "main": "index.js",
   "scripts": {
